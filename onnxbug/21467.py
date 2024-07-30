@@ -16,6 +16,6 @@ def buildAndRunBinaryGraph():
     print('after run')
     print(outputs[0].shape)
     ol = outputs[0][0].flatten().tolist()
-    print(ol)
+    print(outputs)
 
 buildAndRunBinaryGraph()

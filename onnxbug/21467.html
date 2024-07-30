@@ -7,22 +7,25 @@
 <body>
     <canvas id="input-canvas" , width=224, height=224></canvas>
     <!--script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.webgpu.min.js"></script-->
-    <script src="web_r_nofuse/dist/ort.webgpu.min.js"></script>
+    <script src="web/dist/ort.webgpu.min.js"></script>
     <script>
-
-        //models.js globals.
-        let feedsInfo = [];
-        let warmupTimes = 1;
-        let runTimes = 0;
         //ort.env.logLevel = 'verbose';
         //ort.env.debug = true;
-
+        function getFreeDimensionOverrides(modelName) {
+            let freeDimensionOverrides = {};
+            if (modelName === 'jets-text-to-speech') {
+                freeDimensionOverrides = {
+                    text_length: 3,
+                };
+            }
+            return freeDimensionOverrides;
+        }
         async function main() {
             const buffer = new ArrayBuffer(24);
             const bigint64 = new BigInt64Array(buffer);
-            bigint64[0] = 5886014448488689n;
-            bigint64[1] = 1881938909131133n;
-            bigint64[2] = 1898875537769492n;
+            bigint64[0] = 10n;
+            bigint64[1] = 20n;
+            bigint64[2] = 30n;
             const tensor = new ort.Tensor("int64", bigint64, [3]);
 
             // set option
@@ -32,17 +35,17 @@
                         name: 'webgpu',
                     },
                 ],
-                graphOptimizationLevel: 'all',
+                graphOptimizationLevel: 'disabled',
             };
+            // https://huggingface.co/unity/sentis-jets-text-to-speech/blob/main/jets-text-to-speech.onnx
+            option.freeDimensionOverrides = getFreeDimensionOverrides('jets-text-to-speech');
 
             const modelName = 'jets-text-to-speech';
             const modelPath = modelName + '.onnx';
             const session = await ort.InferenceSession.create(modelPath, option);
             let feeds = { text: tensor };
             const result = await session.run(feeds);
-            const predicted = softmax((result.output.data));
-            const label = getClass(predicted).toString();
-            console.log(label);
+            console.log(result);
         }
 
         main();
