@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>ONNX Runtime JavaScript examples: Quick Start - Web (using script tag)</title>
+</head>
+
+<body>
+    <!-- see also advanced usage of importing ONNX Runtime Web: -->
+    <!-- https://github.com/microsoft/onnxruntime-inference-examples/tree/main/js/importing_onnxruntime-web -->
+
+    <!-- import ONNXRuntime Web from CDN -->
+    <!--script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.webgpu.min.js"></script-->
+    <script src="web_d/dist/ort.webgpu.min.js"></script>
+    <script>
+        ort.env.logLevel = 'verbose';
+        ort.env.debug = true;
+        function getFreeDimensionOverrides(modelName) {
+            let freeDimensionOverrides = {};
+            if (modelName === 'pyannote-segmentation-3.0') {
+                freeDimensionOverrides = {
+                    batch_size: 1,
+                    num_channels: 1,
+                    num_samples: 16000,
+                };
+            }
+            return freeDimensionOverrides;
+        }
+
+        // use an async context to call onnxruntime functions.
+        async function main() {
+            try {
+                // create a new session and load the specific model.
+
+                const option = {
+                    executionProviders: [
+                        {
+                            name: 'webgpu',
+                        },
+                    ],
+                    graphOptimizationLevel: 'all',
+                };
+                // option.freeDimensionOverrides = getFreeDimensionOverrides('pyannote-segmentation-3.0');
+                const url = 'https://huggingface.co/onnx-community/pyannote-segmentation-3.0/resolve/main/onnx/model.onnx?download=true';
+                const session = await ort.InferenceSession.create(url, option);
+
+                const dims = [1, 1, 16000];
+                const input = new ort.Tensor(
+                    'float32',
+                    new Float32Array(dims.reduce((acc, x) => acc * x, 1)),
+                    dims,
+                )
+
+                // prepare feeds. use model input names as keys.
+                const feeds = { input_values: input };
+
+                // feed inputs and run
+                const results = await session.run(feeds);
+                console.log(results)
+                // failed to inference ONNX model: Error: [WebGPU] Kernel "[MaxPool] /sincnet/pool1d.0/MaxPool" failed. Error: length of specified kernel shapes should be 2 less than length of input dimensions.
+
+            } catch (e) {
+                document.write(`failed to inference ONNX model: ${e}.`);
+            }
+        }
+
+        main();
+    </script>
+</body>
+
+</html>
